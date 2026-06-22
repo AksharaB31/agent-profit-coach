@@ -1,0 +1,291 @@
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from app.infra.mysql.database import Base 
+
+class Supplier(Base):
+    __tablename__ = "suppliers"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(50), unique=True, index=True)
+    name = Column(String(100))
+    is_active = Column(Boolean, default=True)
+    health_status = Column(String(50))
+    last_checked_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Agent(Base):
+    __tablename__ = "agents"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, index=True)
+    parent_id = Column(Integer)
+    email = Column(String(100))
+    establishment_name = Column(String(150))
+    director_name = Column(String(100))
+    nature_of_business = Column(String(100))
+    cr_number = Column(String(50))
+    cr_expiry_date = Column(DateTime)
+    vat_number = Column(String(50))
+    street = Column(String(200))
+    country = Column(String(50))
+    state = Column(String(50))
+    city = Column(String(50))
+    province = Column(String(50))
+    office_telephone = Column(String(50))
+    office_email = Column(String(100))
+    bank_name = Column(String(100))
+    bank_branch = Column(String(100))
+    account_number = Column(String(100))
+    iban = Column(String(100))
+    manager_name = Column(String(100))
+    manager_email = Column(String(100))
+    manager_mobile = Column(String(50))
+    finance_name = Column(String(100))
+    finance_email = Column(String(100))
+    finance_mobile = Column(String(50))
+    ticketing_contact = Column(String(100))
+    holidays_contact = Column(String(100))
+    annual_volume_words = Column(String(255))
+    annual_volume_figures = Column(String(100))
+    agent_type = Column(String(50))
+    business_type = Column(String(50))
+    recommended_by = Column(String(100))
+    onboarding_submitted_at = Column(DateTime)
+    is_active = Column(Boolean, default=True)
+    approval_status = Column(String(50))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Booking(Base):
+    __tablename__ = "bookings"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    booking_ref_id = Column(String(100), unique=True, index=True)
+    invoice_number = Column(String(100))
+    pnr = Column(String(50))
+    supplier_pnr = Column(String(50))
+    booking_ref = Column(String(100))
+    trace_id = Column(String(100))
+    provider = Column(String(50), index=True)
+    status = Column(String(50))
+    refundable = Column(Boolean)
+    fare_type = Column(String(50))
+    currency = Column(String(10))
+    total_amount = Column(Float)
+    warnings = Column(Text)
+    booked_at = Column(DateTime)
+    agent_id = Column(Integer, ForeignKey("agents.id"))
+    user_id = Column(Integer)
+    booking_date = Column(DateTime)
+    last_ticketing_date = Column(DateTime)
+    hold_date = Column(DateTime)
+    issue_date = Column(DateTime)
+    owner = Column(String(50))
+    passenger_count = Column(Integer)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    agent = relationship("Agent")
+    adjusted_fares = relationship("BookingAdjustedFare", back_populates="booking")
+    flights = relationship("BookingFlight", back_populates="booking")
+    processes = relationship("BookingProcess", primaryjoin="foreign(Booking.provider) == BookingProcess.provider_code", viewonly=True)
+
+class BookingAdjustedFare(Base):
+    __tablename__ = "booking_adjusted_fares"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id"))
+    total_amount = Column(Float)
+    total_tax = Column(Float)
+    total_base = Column(Float)
+    per_pax_base = Column(Float)
+    markup_amount = Column(Float)
+    discount_amount = Column(Float)
+    supplier_commission = Column(Float)
+    admin_markup = Column(Float)
+    agent_markup = Column(Float)
+    service_fee = Column(Float)
+    final_price = Column(Float)
+    final_total_base = Column(Float)
+    admin_profit = Column(Float)
+    agent_profit = Column(Float)
+    currency = Column(String(10))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    booking = relationship("Booking", back_populates="adjusted_fares")
+
+class BookingFlight(Base):
+    __tablename__ = "booking_flights"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id"))
+    purchase_id = Column(String(100))
+    flight_pnr = Column(String(50))
+    validating_airline = Column(String(10))
+    adult_count = Column(Integer)
+    child_count = Column(Integer)
+    infant_count = Column(Integer)
+    currency = Column(String(10))
+    current_status = Column(String(50))
+    refundable = Column(Boolean)
+    fare_type = Column(String(50))
+    ticket_time_limit = Column(DateTime)
+    fop = Column(String(50))
+    sequence = Column(Integer)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    booking = relationship("Booking", back_populates="flights")
+    segments = relationship("BookingSegment", back_populates="flight")
+    fares = relationship("BookingFare", back_populates="flight")
+
+class BookingFare(Base):
+    __tablename__ = "booking_fares"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    booking_flight_id = Column(Integer, ForeignKey("booking_flights.id"))
+    pax_type = Column(String(10))
+    base_fare = Column(Float)
+    tax_amount = Column(Float)
+    total_fare = Column(Float)
+    supplier_amount = Column(Float)
+    markup_amount = Column(Float)
+    final_amount = Column(Float)
+    final_base_fare = Column(Float)
+    quantity = Column(Integer)
+    tax_breakdown = Column(Text)
+    booking_passenger_id = Column(Integer)
+    ancillary_amount = Column(Float)
+    is_individual = Column(Boolean)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    flight = relationship("BookingFlight", back_populates="fares")
+
+class BookingSegment(Base):
+    __tablename__ = "booking_segments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    booking_flight_id = Column(Integer, ForeignKey("booking_flights.id"))
+    airline = Column(String(10))
+    flight_number = Column(String(20))
+    cabin_class = Column(String(50))
+    fare_basis = Column(String(50))
+    departure_airport = Column(String(10))
+    arrival_airport = Column(String(10))
+    departure_time = Column(DateTime)
+    arrival_time = Column(DateTime)
+    departure_terminal = Column(String(10))
+    arrival_terminal = Column(String(10))
+    duration_minutes = Column(Integer)
+    stop_over = Column(Boolean)
+    aircraft_code = Column(String(20))
+    codeshare = Column(Boolean)
+    operating_airline = Column(String(10))
+    sequence = Column(Integer)
+    marketing_carrier = Column(String(10))
+    trip_indicator = Column(String(10))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    flight = relationship("BookingFlight", back_populates="segments")
+
+class BookingAncillary(Base):
+    __tablename__ = "booking_ancillaries"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id"))
+    booking_passenger_id = Column(Integer)
+    booking_segment_id = Column(Integer, ForeignKey("booking_segments.id"))
+    type = Column(String(50))
+    subtype = Column(String(50))
+    code = Column(String(50))
+    description = Column(String(200))
+    amount = Column(Float)
+    currency = Column(String(10))
+    status = Column(String(50))
+    details = Column(Text)
+    ssr_category = Column(String(50))
+    quantity = Column(Integer)
+    purchased_at = Column(DateTime)
+    purchase_source = Column(String(50))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Markup(Base):
+    __tablename__ = "markups"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    owner_type = Column(String(50))
+    owner_id = Column(Integer)
+    supplier_code = Column(String(50))
+    airline_code = Column(String(10))
+    origin = Column(String(10))
+    destination = Column(String(10))
+    cabin_class = Column(String(50))
+    markup_type = Column(String(50))
+    markup_value = Column(Float)
+    priority = Column(Integer)
+    status = Column(String(50))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Flight(Base):
+    __tablename__ = "flights"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id"))
+    purchaseId = Column(String(100))
+    pnr = Column(String(50))
+    validatingAirline = Column(String(10))
+    adultCount = Column(Integer)
+    childCount = Column(Integer)
+    infantCount = Column(Integer)
+    currency = Column(String(10))
+    currentStatus = Column(String(50))
+    refundable = Column(Boolean)
+    fareType = Column(String(50))
+    priceClass = Column(String(50))
+    fop = Column(String(50))
+    address = Column(String(200))
+    gst = Column(String(100))
+    miniRules = Column(Text)
+    flightFares = Column(Text)
+    meals = Column(Text)
+    seats = Column(Text)
+    grossFare = Column(Float)
+    netFare = Column(Float)
+    clientMarkup = Column(Float)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Airline(Base):
+    __tablename__ = "airlines"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    Iata_code = Column(String(10), unique=True, index=True)
+    Airline_name = Column(String(100))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class BookingProcess(Base):
+    __tablename__ = "booking_processes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer)
+    provider_code = Column(String(50), index=True)
+    state = Column(String(50))
+    current_step = Column(String(50))
+    context = Column(Text)
+    supplier_context = Column(Text)
+    error_context = Column(Text)
+    idempotency_key = Column(String(100))
+    trace_id = Column(String(100))
+    wallet_hold_id = Column(String(100))
+    attempts = Column(Integer)
+    last_transition_at = Column(DateTime)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

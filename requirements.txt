@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+sqlalchemy
+pymysql
+pydantic
+python-dotenv
+redis
+pytest
+httpx
+scikit-learn
+joblib
+pandas
+numpy 
+pydantic-settings 
+black
+flake8  

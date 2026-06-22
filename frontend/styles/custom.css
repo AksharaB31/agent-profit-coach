@@ -1,0 +1,115 @@
+/* Premium Dark Theme for Afinetrip B2B Airline Engine */
+.main {
+    background-color: #09090b !important;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    color: #f8fafc !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.025em;
+}
+
+/* Metric Cards override */
+div[data-testid="stMetricValue"] {
+    font-size: 1.8rem !important;
+    color: #38bdf8 !important; /* Vibrant Sky Blue */
+    font-weight: 800 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    word-wrap: break-word !important;
+}
+
+div[data-testid="stMetricLabel"] {
+    font-weight: 600 !important;
+    color: #94a3b8 !important;
+    font-size: 0.85rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}
+
+/* Enterprise Panel/Card */
+.enterprise-card {
+    background-color: #18181b !important;
+    border-radius: 16px !important;
+    padding: 24px !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3) !important;
+    margin-bottom: 24px !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+    color: #e2e8f0 !important;
+}
+
+.enterprise-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3) !important;
+    border-color: rgba(56, 189, 248, 0.3) !important;
+}
+
+.hero-card {
+    border-left: 6px solid #38bdf8 !important;
+    background: linear-gradient(to right, #18181b, #09090b) !important;
+}
+
+/* Badges / Pills */
+.badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 0.35rem 0.85rem !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    vertical-align: baseline !important;
+    border-radius: 9999px !important;
+    margin-right: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.badge-success { background-color: rgba(34, 197, 94, 0.2) !important; color: #4ade80 !important; border: 1px solid rgba(74, 222, 128, 0.3) !important; }
+.badge-warning { background-color: rgba(234, 179, 8, 0.2) !important; color: #facc15 !important; border: 1px solid rgba(250, 204, 21, 0.3) !important; }
+.badge-danger { background-color: rgba(239, 68, 68, 0.2) !important; color: #f87171 !important; border: 1px solid rgba(248, 113, 113, 0.3) !important; }
+.badge-primary { background-color: rgba(56, 189, 248, 0.2) !important; color: #38bdf8 !important; border: 1px solid rgba(56, 189, 248, 0.3) !important; }
+.badge-dark { background-color: rgba(255, 255, 255, 0.1) !important; color: #e2e8f0 !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+
+/* Sidebar styling */
+section[data-testid="stSidebar"] {
+    background-color: #09090b !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Progress bar container tweak */
+.stProgress > div > div > div {
+    background: linear-gradient(to right, #0ea5e9, #38bdf8) !important;
+    border-radius: 9999px !important;
+}
+
+/* Expanders */
+.streamlit-expanderHeader {
+    font-weight: 600 !important;
+    color: #f8fafc !important;
+    background-color: #18181b !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Tables */
+div[data-testid="stTable"] {
+    background-color: transparent !important;
+}
+th {
+    background-color: #18181b !important;
+    color: #94a3b8 !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.5px !important;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.05) !important;
+}
+td {
+    color: #e2e8f0 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
