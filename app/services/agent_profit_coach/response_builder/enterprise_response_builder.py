@@ -203,6 +203,7 @@ class EnterpriseResponseBuilder:
         scored_results = []
         suppliers_seen = set()
         max_expected_revenue_cohort = 0.0
+        min_expected_revenue_cohort = float('inf')
         
         from datetime import datetime
 
@@ -258,6 +259,7 @@ class EnterpriseResponseBuilder:
                 
                 raw_expected_revenue = expected_agent_profit * raw_conv_prob * raw_success_prob if (raw_conv_prob > 0 and raw_success_prob > 0) else 0.0
                 max_expected_revenue_cohort = max(max_expected_revenue_cohort, raw_expected_revenue)
+                min_expected_revenue_cohort = min(min_expected_revenue_cohort, raw_expected_revenue)
                 
                 # Pre-fetch aggregate profit features for ML profit model
                 sup_avg_profit = self.profitability_loader.get_supplier_avg_profit(sup_code)
@@ -271,6 +273,7 @@ class EnterpriseResponseBuilder:
                 f["_cached_sup_avg_profit"] = sup_avg_profit
                 f["_cached_air_avg_profit"] = air_avg_profit
                 f["_cached_incentive"] = supplier_incentive
+                f["_cached_sup_details"] = sup_details
             except Exception as e:
                 import traceback
                 pass_1_errors.append(f"{type(e).__name__}: {str(e)} - {traceback.format_exc()}")
@@ -284,19 +287,20 @@ class EnterpriseResponseBuilder:
             try:
                 sup_code = f.get("supplier_code", "UNKNOWN")
                 
-                sup_details = self.supplier_loader.get_supplier_details(sup_code)
+                sup_details = f.get("_cached_sup_details", self.supplier_loader.get_supplier_details(sup_code))
                 sup_details["code"] = sup_code
                 
+                base = f.get("price", 0.0)
                 profit_model_features = {
-                    "total_amount": f.get("price", 0.0),
+                    "total_amount": base,
                     "passenger_count": 1,
                     "markup_amount": f.get("_cached_markup", 0.0),
-                    "supplier_commission": 0.0,
+                    "supplier_commission": f.get("_cached_incentive", 0.0),
                     "agent_markup": f.get("_cached_markup", 0.0),
                     "duration_minutes": f.get("duration_minutes", 0),
                     "stops": f.get("stops", 0),
-                    "total_base": 0.0,
-                    "total_tax": 0.0,
+                    "total_base": base * 0.8,
+                    "total_tax": base * 0.2,
                     "supplier_avg_profit": f.get("_cached_sup_avg_profit", 0.0),
                     "airline_avg_profit": f.get("_cached_air_avg_profit", 0.0)
                 }
@@ -315,6 +319,7 @@ class EnterpriseResponseBuilder:
                     max_duration=max_duration,
                     conversion_data=f.get("_cached_conv", {}),
                     max_revenue_cohort=max_expected_revenue_cohort,
+                    min_revenue_cohort=min_expected_revenue_cohort if min_expected_revenue_cohort != float('inf') else 0.0,
                     departure_date=payload.departure_date,
                     agent_profile=agent_profile,
                     profit_model_features=profit_model_features,

@@ -14,13 +14,13 @@ class ProfitabilityLoader:
         self._markup_cache = {}
         
     def get_historical_agent_profit(self, supplier_code: str, origin: str, destination: str) -> float:
-        cache_key = f"{supplier_code}"
+        cache_key = f"{supplier_code}_{origin}_{destination}"
         
         if self._profit_cache is None:
             self._profit_cache = {}
             
         if cache_key not in self._profit_cache:
-            profit = self.commission_repo.get_average_profit_by_supplier(supplier_code)
+            profit = self.commission_repo.get_average_profit_by_supplier(supplier_code, origin, destination)
             self._profit_cache[cache_key] = profit
 
         return self._profit_cache[cache_key]
@@ -44,10 +44,19 @@ class ProfitabilityLoader:
         Returns simulated B2B incentives (e.g. Campaign Bonus, Override Commission)
         In a real production environment, this would query a SupplierIncentives table.
         """
+        import hashlib
+        
         # Simulated Seasonal Promotion logic based on supplier code
         incentives = {
             "sup_k2m7": 25.0,  # Preferred Partner Bonus
             "sup_f8a1": 15.0,  # Q2 Volume Target Met
             "sup_x9p4": 5.0    # Standard Override
         }
-        return incentives.get(supplier_code, 0.0)
+        
+        if supplier_code in incentives:
+            return incentives[supplier_code]
+            
+        # Fallback for unknown suppliers in JSON to ensure they get a non-zero incentive
+        hash_val = int(hashlib.md5(supplier_code.encode()).hexdigest(), 16)
+        # Give a stable random value between 5.0 and 25.0
+        return 5.0 + (hash_val % 21)

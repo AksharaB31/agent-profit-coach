@@ -59,7 +59,18 @@ class AgentLoader:
                 elif (refund_count / total_bookings) > 0.2:
                     refund_preference = "medium"
                     
-            profile_type = "premium" if avg_val > 500 else "budget"
+            from app.infra.mysql.models import BookingSegment
+            
+            has_premium = self.db.query(BookingSegment).join(
+                BookingFlight, BookingFlight.id == BookingSegment.booking_flight_id
+            ).join(
+                Booking, Booking.id == BookingFlight.booking_id
+            ).filter(
+                Booking.agent_id == agent_id,
+                BookingSegment.cabin_class.in_(["Business", "First"])
+            ).first()
+            
+            profile_type = "premium" if has_premium else "budget"
             
             profile = {
                 "agent_id": agent_id,

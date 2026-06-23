@@ -149,14 +149,17 @@ def seed_database():
             db.flush()
             
             # Segment with all fields populated
+            routes = [("WAW", "BER"), ("DEL", "DXB"), ("DEL", "COK"), ("JFK", "LHR")]
+            origin, destination = random.choice(routes)
+            
             segment = BookingSegment(
                 booking_flight_id=flight.id,
                 airline=airline,
                 flight_number=f"{airline}{random.randint(100, 999)}",
                 cabin_class="Economy",
                 fare_basis="Y",
-                departure_airport="WAW",
-                arrival_airport="BER",
+                departure_airport=origin,
+                arrival_airport=destination,
                 departure_time=datetime.utcnow() + timedelta(days=random.randint(10, 30)),
                 arrival_time=datetime.utcnow() + timedelta(days=random.randint(10, 30), hours=2),
                 departure_terminal="1",

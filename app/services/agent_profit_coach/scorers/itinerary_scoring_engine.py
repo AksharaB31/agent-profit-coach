@@ -36,6 +36,7 @@ class ItineraryScoringEngine:
         min_duration: int, max_duration: int,
         conversion_data: Dict[str, int],
         max_revenue_cohort: float,
+        min_revenue_cohort: float,
         departure_date: str = "",
         agent_profile: Dict[str, Any] = None,
         profit_model_features: Dict[str, Any] = None,
@@ -56,7 +57,7 @@ class ItineraryScoringEngine:
         success_prob = float(self.reliability.calculate_booking_success_probability(p_success, p_total))
         cancel_risk = float(self.reliability.calculate_cancellation_risk(b_cancelled, b_total))
         ticketing_rate = float(self.reliability.calculate_ticketing_success_rate(p_ticketed, p_total))
-        refund_rate = float(self.reliability.calculate_refund_success_rate(p_refunded + b_refunded, p_total + b_total))
+        refund_rate = float(self.reliability.calculate_refund_success_rate(p_refunded, p_total))
         
         health_status = supplier_data.get("health_status", "unknown")
         reliability_score = float(self.reliability.calculate_supplier_reliability(
@@ -98,7 +99,7 @@ class ItineraryScoringEngine:
         profit_margin_percent = profit_data.get("profit_margin_percent", 0.0)
         
         # 3. Convenience & Factors
-        stops = flight.get("stops", flight.get("stop_count", 99))
+        stops = flight.get("stops", flight.get("stop_count", flight.get("segment_count", 1) - 1))
         duration = flight.get("duration_minutes", 999999)
         refundable = flight.get("refundable", False)
         
@@ -152,7 +153,7 @@ class ItineraryScoringEngine:
         
         # Max profit dynamically based on cohort's maximum expected revenue. No hardcoded caps.
         # Fallback to 1.0 to avoid division by zero if cohort has 0 revenue across the board
-        revenue_score = norm.normalize_value(expected_revenue, min_val=0.0, max_val=max(max_revenue_cohort, 1.0))
+        revenue_score = norm.normalize_value(expected_revenue, min_val=min_revenue_cohort, max_val=max(max_revenue_cohort, 1.0))
         
         booking_score = norm.normalize_probability(conv_prob)
         reliability_score_norm = norm.normalize_reliability(reliability_score)
@@ -177,26 +178,38 @@ class ItineraryScoringEngine:
                 profit_weight = settings.PROFIT_WEIGHT - 0.05
                 convenience_weight = settings.CONVENIENCE_WEIGHT + 0.05
             rel_weight = settings.RELIABILITY_WEIGHT
+            price_weight = settings.PRICE_WEIGHT
+            conv_weight = settings.CONVERSION_WEIGHT
         else:
             profit_weight = settings.PROFIT_WEIGHT
             rel_weight = settings.RELIABILITY_WEIGHT
             convenience_weight = settings.CONVENIENCE_WEIGHT
+            price_weight = settings.PRICE_WEIGHT
+            conv_weight = settings.CONVERSION_WEIGHT
 
-        remaining = 1.0 - profit_weight - rel_weight - convenience_weight
+        remaining = 1.0 - profit_weight - rel_weight - convenience_weight - price_weight - conv_weight
         profit_weight += remaining * 0.5
         convenience_weight += remaining * 0.5
+
+        # Normalize price score if available (assuming price_score is 0-100)
+        price_score_norm = price_score
 
         # B. Profit Opportunity Score (Deterministic, Transparent Math - 0-100 Scale)
         profit_opportunity_score_100 = (
             revenue_score * profit_weight +
             reliability_score_norm * rel_weight +
-            convenience_score_norm * convenience_weight
-        ) + preference_boost
+            convenience_score_norm * convenience_weight +
+            price_score_norm * price_weight +
+            conversion_score * conv_weight
+        ) + (preference_boost * 100.0)
+        
+        profit_opportunity_score_100 = max(0.0, min(profit_opportunity_score_100, 100.0))
         
         score_breakdown = {
             "expected_revenue_score": round(revenue_score, 2),
-            "booking_score": round(booking_score, 2),
+            "booking_score": round(conversion_score, 2),
             "convenience_score": round(convenience_score_norm, 2),
+            "price_score": round(price_score_norm, 2),
             "final_profit_opportunity_score": round(profit_opportunity_score_100, 2)
         }
         
