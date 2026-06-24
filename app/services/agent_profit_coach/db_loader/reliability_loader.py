@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app.domain.repositories.booking_repository import BookingRepository
+import threading
 from typing import Dict, Any
 
 class ReliabilityLoader:
@@ -9,44 +10,46 @@ class ReliabilityLoader:
         self.db = db
         self.booking_repo = BookingRepository(db)
         self._cache = None
+        self._lock = threading.Lock()
         
     def get_supplier_reliability(self, supplier_code: str) -> Dict[str, Any]:
-        if self._cache is None:
-            self._cache = {}
-            
-            # 1. Booking Success Probability via BookingProcess
-            process_stats = self.booking_repo.get_process_success_stats()
-            for row in process_stats:
-                if row.provider_code:
-                    total = row.total or 0
-                    success = row.success or 0
-                    ticketed = getattr(row, "ticketed", 0) or 0
-                    refunded_process = getattr(row, "refunded", 0) or 0
-                    
-                    if row.provider_code not in self._cache:
-                        self._cache[row.provider_code] = {}
-                    self._cache[row.provider_code]["process_success"] = success
-                    self._cache[row.provider_code]["process_ticketed"] = ticketed
-                    self._cache[row.provider_code]["process_refunded"] = refunded_process
-                    self._cache[row.provider_code]["process_total"] = total
-            
-            # 2. Cancellation Risk via Booking
-            booking_stats = self.booking_repo.get_booking_cancellation_stats()
-            for row in booking_stats:
-                if row.provider:
-                    total = row.total or 0
-                    cancelled = row.cancelled or 0
-                    refunded_booking = getattr(row, "refunded", 0) or 0
-                    
-                    if row.provider not in self._cache:
-                        self._cache[row.provider] = {}
-                    self._cache[row.provider]["booking_cancelled"] = cancelled
-                    self._cache[row.provider]["booking_refunded"] = refunded_booking
-                    self._cache[row.provider]["booking_total"] = total
+        with self._lock:
+            if self._cache is None:
+                self._cache = {}
                 
-        # Extract specific supplier data
-        sup_data = self._cache.get(supplier_code, {})
-        
+                # 1. Booking Success Probability via BookingProcess
+                process_stats = self.booking_repo.get_process_success_stats()
+                for row in process_stats:
+                    if row.provider_code:
+                        total = row.total or 0
+                        success = row.success or 0
+                        ticketed = getattr(row, "ticketed", 0) or 0
+                        refunded_process = getattr(row, "refunded", 0) or 0
+                        
+                        if row.provider_code not in self._cache:
+                            self._cache[row.provider_code] = {}
+                        self._cache[row.provider_code]["process_success"] = success
+                        self._cache[row.provider_code]["process_ticketed"] = ticketed
+                        self._cache[row.provider_code]["process_refunded"] = refunded_process
+                        self._cache[row.provider_code]["process_total"] = total
+                
+                # 2. Cancellation Risk via Booking
+                booking_stats = self.booking_repo.get_booking_cancellation_stats()
+                for row in booking_stats:
+                    if row.provider:
+                        total = row.total or 0
+                        cancelled = row.cancelled or 0
+                        refunded_booking = getattr(row, "refunded", 0) or 0
+                        
+                        if row.provider not in self._cache:
+                            self._cache[row.provider] = {}
+                        self._cache[row.provider]["booking_cancelled"] = cancelled
+                        self._cache[row.provider]["booking_refunded"] = refunded_booking
+                        self._cache[row.provider]["booking_total"] = total
+                    
+            # Extract specific supplier data
+            sup_data = self._cache.get(supplier_code, {})
+            
         # Check if we have enough historical data
         has_history = sup_data.get("process_total", 0) > 0 or sup_data.get("booking_total", 0) > 0
         

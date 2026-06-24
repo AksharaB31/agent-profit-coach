@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from app.domain.repositories.commission_repository import CommissionRepository
+import threading
 from app.domain.repositories.markup_repository import MarkupRepository
 from typing import Dict, Any
 
@@ -10,20 +11,23 @@ class ProfitabilityLoader:
         self.db = db
         self.commission_repo = CommissionRepository(db)
         self.markup_repo = MarkupRepository(db)
-        self._profit_cache = None
+        self._profit_cache = {}
         self._markup_cache = {}
+        self._lock = threading.Lock()
         
     def get_historical_agent_profit(self, supplier_code: str, origin: str, destination: str) -> float:
         cache_key = f"{supplier_code}_{origin}_{destination}"
         
-        if self._profit_cache is None:
-            self._profit_cache = {}
-            
-        if cache_key not in self._profit_cache:
-            profit = self.commission_repo.get_average_profit_by_supplier(supplier_code, origin, destination)
+        with self._lock:
+            if cache_key in self._profit_cache:
+                return self._profit_cache[cache_key]
+                
+        profit = self.commission_repo.get_average_profit_by_supplier(supplier_code, origin, destination)
+        
+        with self._lock:
             self._profit_cache[cache_key] = profit
-
-        return self._profit_cache[cache_key]
+            
+        return profit
 
     def get_supplier_avg_profit(self, supplier_code: str) -> float:
         return self.commission_repo.get_average_profit_by_supplier(supplier_code)

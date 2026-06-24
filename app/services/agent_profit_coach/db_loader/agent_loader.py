@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+import threading
 from app.infra.mysql.models import Booking, BookingAdjustedFare, BookingFlight, Agent
 from typing import Dict, Any
 
@@ -9,19 +10,22 @@ class AgentLoader:
     def __init__(self, db: Session):
         self.db = db
         self._cache = {}
+        self._lock = threading.Lock()
         
     def get_agent_profile(self, agent_id: int) -> Dict[str, Any]:
         if not agent_id:
             return None
             
-        if agent_id in self._cache:
-            return self._cache[agent_id]
+        with self._lock:
+            if agent_id in self._cache:
+                return self._cache[agent_id]
             
         try:
             # Check if agent exists
             agent = self.db.query(Agent).filter(Agent.id == agent_id).first()
             if not agent:
-                self._cache[agent_id] = None
+                with self._lock:
+                    self._cache[agent_id] = None
                 return None
                 
             agent_type = agent.agent_type or "UNKNOWN"
@@ -82,7 +86,8 @@ class AgentLoader:
                 "profile_type": profile_type
             }
             
-            self._cache[agent_id] = profile
+            with self._lock:
+                self._cache[agent_id] = profile
             return profile
             
         except Exception as e:
