@@ -1,21 +1,50 @@
 import redis
-from app.infra.settings import infra_settings
+import logging
+from app.core.config import settings
 
+logger = logging.getLogger(__name__)
 
 class RedisProvider:
 
     def __init__(self):
-        self.client = redis.Redis(
-            host=infra_settings.REDIS_HOST,
-            port=infra_settings.REDIS_PORT,
-            decode_responses=True
-        )
+        try:
+            self.client = redis.Redis(
+                host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                decode_responses=True
+            )
+        except Exception as e:
+            logger.error(f"Failed to initialize Redis client: {e}")
+            self.client = None
 
     def get(self, key):
-        return self.client.get(key)
+        if not self.client:
+            return None
+        try:
+            return self.client.get(key)
+        except Exception as e:
+            logger.error(f"Redis get error for {key}: {e}")
+            return None
 
     def set(self, key, value, ttl=300):
-        self.client.setex(key, ttl, value)
+        if not self.client:
+            return
+        try:
+            self.client.setex(key, ttl, value)
+        except Exception as e:
+            logger.error(f"Redis set error for {key}: {e}")
 
     def delete(self, key):
-        self.client.delete(key)
+        if not self.client:
+            return
+        try:
+            self.client.delete(key)
+        except Exception as e:
+            logger.error(f"Redis delete error for {key}: {e}")
+
+    def close(self):
+        if self.client:
+            try:
+                self.client.close()
+            except Exception as e:
+                logger.error(f"Redis close error: {e}")

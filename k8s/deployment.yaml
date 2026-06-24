@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-profit-api
+  labels:
+    app: agent-profit-api
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: agent-profit-api
+  template:
+    metadata:
+      labels:
+        app: agent-profit-api
+    spec:
+      containers:
+      - name: agent-profit-api
+        image: agentprofit/api:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: agent-profit-config
+        - secretRef:
+            name: agent-profit-secrets
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10

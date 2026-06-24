@@ -15,7 +15,7 @@ class HistoricalMetricsLoader:
 
     def get_supplier_health(self, supplier_code: str) -> str:
         if self._supplier_cache is None:
-            suppliers = self.db.query(Supplier).all()
+            suppliers = self.db.query(Supplier).limit(100).offset(0).all()
             self._supplier_cache = {s.code: s.health_status for s in suppliers}
         
         return self._supplier_cache.get(supplier_code, "unknown")

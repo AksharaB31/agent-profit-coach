@@ -11,15 +11,13 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000 
 
-    DATABASE_URL: str = (
-        "mysql+pymysql://root:@localhost:3307/afineagent"
-    )
+    DATABASE_URL: str
 
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
 
-    SECRET_KEY: str = "super-secret-key"
-    API_KEY: str = "agentprofit-secret"
+    SECRET_KEY: str
+    API_KEY: str
 
     # ML MODELS
     PROFIT_MODEL_PATH: str = (

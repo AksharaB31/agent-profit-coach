@@ -294,9 +294,6 @@ class EnterpriseResponseBuilder:
                 profit_model_features = {
                     "total_amount": base,
                     "passenger_count": 1,
-                    "markup_amount": f.get("_cached_markup", 0.0),
-                    "supplier_commission": f.get("_cached_incentive", 0.0),
-                    "agent_markup": f.get("_cached_markup", 0.0),
                     "duration_minutes": f.get("duration_minutes", 0),
                     "stops": f.get("stops", 0),
                     "total_base": base * 0.8,

@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=mysql+pymysql://root:root@db:3306/agentprofit
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - API_KEY=local-dev-api-key
+      - SECRET_KEY=local-dev-secret-key
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  frontend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    command: streamlit run frontend/app.py
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+      - API_KEY=local-dev-api-key
+    depends_on:
+      - api
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=agentprofit
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

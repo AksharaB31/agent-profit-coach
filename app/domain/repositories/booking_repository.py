@@ -24,7 +24,7 @@ class BookingRepository:
             ).group_by(BookingProcess.provider_code).all()
         except Exception as e:
             logger.error(f"Database error in get_process_success_stats: {e}")
-            return []
+            raise e
 
     def get_booking_cancellation_stats(self) -> List[Any]:
         """Fetches total bookings and cancelled bookings grouped by provider."""
@@ -37,7 +37,7 @@ class BookingRepository:
             ).group_by(Booking.provider).all()
         except Exception as e:
             logger.error(f"Database error in get_booking_cancellation_stats: {e}")
-            return []
+            raise e
 
     def get_route_conversion_stats(self, supplier_code: str, origin: str, destination: str) -> Dict[str, int]:
         """Fetches booking conversion probability for a specific route."""
@@ -62,5 +62,6 @@ class BookingRepository:
                 }
         except Exception as e:
             logger.error(f"Database error in get_route_conversion_stats: {e}")
+            raise e
             
         return {"total": 0, "successful": 0}

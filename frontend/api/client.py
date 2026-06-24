@@ -13,7 +13,10 @@ def fetch_itinerary_intelligence(payload: Dict[str, Any]) -> Dict[str, Any]:
             config.API_ENDPOINT,
             json=payload,
             timeout=config.API_TIMEOUT_SECONDS,
-            headers={"Content-Type": "application/json"}
+            headers={
+                "Content-Type": "application/json",
+                "X-API-Key": config.API_KEY
+            }
         )
         response.raise_for_status()
         return response.json()

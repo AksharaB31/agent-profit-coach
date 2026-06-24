@@ -14,8 +14,12 @@ from app.domain.ai_engine.feature_validation_service import FeatureValidationSer
 
 logger = logging.getLogger(__name__)
 
-ONEWAY_MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "ml_profit_model_oneway_v1.pkl"
-ROUNDTRIP_MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "ml_profit_model_roundtrip_v1.pkl"
+from datetime import datetime
+
+# Model Versioning using timestamps
+version = datetime.now().strftime("%Y%m%d_%H%M%S")
+ONEWAY_MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / f"ml_profit_model_oneway_{version}.pkl"
+ROUNDTRIP_MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / f"ml_profit_model_roundtrip_{version}.pkl"
 
 
 def build_profit_dataset(session) -> pd.DataFrame:
@@ -81,9 +85,8 @@ def build_profit_dataset(session) -> pd.DataFrame:
 
 def _train_model(df: pd.DataFrame, model_path: Path, label: str) -> str:
     feature_cols = [
-        "total_amount", "passenger_count", "markup_amount", "supplier_commission",
-        "agent_markup", "duration_minutes", "stops", "total_base", "total_tax",
-        "supplier_avg_profit", "airline_avg_profit"
+        "total_amount", "passenger_count", "duration_minutes", "stops", 
+        "total_base", "total_tax", "supplier_avg_profit", "airline_avg_profit"
     ]
 
     FeatureValidationService.validate_features(feature_cols)
@@ -124,7 +127,12 @@ def _train_model(df: pd.DataFrame, model_path: Path, label: str) -> str:
     )
 
     joblib.dump(model, model_path)
-    logger.info(f"{label} model saved to {model_path}")
+    
+    # Also save a generic "latest" version for inference to pick up automatically without config changes
+    latest_path = str(model_path).split("_202")[0] + "_v1.pkl"
+    joblib.dump(model, latest_path)
+    
+    logger.info(f"{label} model saved to {model_path} and {latest_path}")
     return f"{label} trained. MAE: {mae:.2f}, R2: {r2:.4f}"
 
 

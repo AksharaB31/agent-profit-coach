@@ -30,7 +30,7 @@ class CommissionRepository:
             return 0.0
         except Exception as e:
             logger.error(f"Database error in get_average_profit_by_airline for {airline_code}: {e}")
-            return 0.0
+            raise e
 
     def get_average_profit_by_supplier(self, supplier_code: str, origin: str = None, destination: str = None) -> float:
         """Fetches the historical average agent profit for a given supplier, optionally filtered by route."""
@@ -76,4 +76,4 @@ class CommissionRepository:
             return 0.0
         except Exception as e:
             logger.error(f"Database error in get_average_profit_by_supplier for {supplier_code}: {e}")
-            return 0.0
+            raise e
